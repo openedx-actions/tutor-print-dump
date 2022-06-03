@@ -1,4 +1,4 @@
-name: Tutor k8s print dump
+name: Open edX Tutor k8s print dump
 description: Github Action to print a summary report (a "dump") of the tutor configuration contents to the console
 branding:
   icon: 'cloud'
