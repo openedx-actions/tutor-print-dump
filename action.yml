@@ -38,10 +38,18 @@ runs:
         echo '-------------------------------------'
         cat $(tutor config printroot)/config.yml
 
-    - name: Dump tutor openedx/config/lms.env.json
+    - name: Dump tutor env/apps/openedx/config/lms.env.yml
       shell: bash
       continue-on-error: true
       run: |-
-        echo 'lms.env.json:'
+        echo 'lms.env.yml:'
         echo '-------------------------------------'
-        cat $(tutor config printroot)/env/apps/openedx/config/lms.env.json
+        cat $(tutor config printroot)/env/apps/openedx/config/lms.env.yml
+
+    - name: Dump tutor env/apps/openedx/config/cms.env.yml
+      shell: bash
+      continue-on-error: true
+      run: |-
+        echo 'cms.env.yml:'
+        echo '-------------------------------------'
+        cat $(tutor config printroot)/env/apps/openedx/config/cms.env.yml
