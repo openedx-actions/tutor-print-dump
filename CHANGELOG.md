@@ -1,3 +1,6 @@
+## Version 0.0.1 (2022-06-16)
+
+General production release.
 ## Version 0.0.1 (2022-06-01)
 
 **Experimental. Do not use in production.**
