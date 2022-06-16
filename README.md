@@ -9,7 +9,11 @@
 
 # tutor-print-dump
 
-Github Action to print a summary report (a "dump") of the tutor configuration contents to the console
+Github Action to print a summary report (a "dump") of the tutor configuration contents to the console.
+
+This action is designed to work seamlessly with Kubernetes secrets created by the Terraform modules contained in [Cookiecutter Tutor Open edX Production Devops Tools](https://github.com/lpm0073/cookiecutter-openedx-devops).
+
+**IMPORTANT SECURITY DISCLAIMER**: Sensitive data contained in the Kubernetes secrets is masked in Github Actions logs and console output provided however, that all of these secrets were created with the Cookiecutter, and, that all of these secrets were extracted using openedx-actions/tutor-k8s-get-secret. If you created your Open edX installation using the Cookiecutter then this is your case and you have nothing more to worry about. If on the other hand you are working with Kubernetes secrets created outside of the Cookiecutter, or if you have created a custom workflow that does not use openedx-actions/tutor-k8s-get-secret then **be aware that you run a non-zero risk of sensitive data becoming exposed inside the Github Actions logs and/or console output**.
 
 
 ## Usage:
@@ -38,7 +42,7 @@ jobs:
 
       # install and configure tutor and kubectl
       - name: Initialize environment
-        uses: openedx-actions/tutor-k8s-init@v0.0.1
+        uses: openedx-actions/tutor-k8s-init@v1.0.0
         with:
           namespace: openedx-prod
 
@@ -48,5 +52,5 @@ jobs:
 
       # This action.
       - name: Print tutor dump report
-        uses: openedx-actions/tutor-print-dump@v0.0.1
+        uses: openedx-actions/tutor-print-dump@v1.0.0 
 ```
