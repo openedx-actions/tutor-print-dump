@@ -3,10 +3,24 @@ description: Github Action to print a summary report (a "dump") of the tutor con
 branding:
   icon: 'cloud'
   color: 'orange'
+inputs:
+  eks-namespace:
+    description: 'The Kubernetes namespace to which the Open edX platform environment is or will be deployed. Example: openedx-prod'
+    required: false
+    default: UNASSIGNED
+    type: string
 runs:
   using: "composite"
   steps:
+    - name: set k8s context and namespace
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: set-context
+      shell: bash
+      run: |-
+        kubectl config set-context --current --namespace=${{ inputs.eks-namespace }}
+
     - name: pip list
+      id: pip-list
       shell: bash
       continue-on-error: true
       run: |-
@@ -14,7 +28,21 @@ runs:
         echo '-------------------------------------'
         pip list
 
+    - name: persist pip list
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: pip-list-persist
+      shell: bash
+      run: |-
+        pip list --format=json > $(tutor config printroot)/pip.json
+
+        kubectl create secret generic 'cookiecutter-ci-deploy-pip'  \
+        --save-config \
+        --dry-run=client \
+        --from-file=$(tutor config printroot)/pip.json \
+        -o yaml | kubectl apply -f -
+
     - name: Dump tutor config apps folder
+      id: config-apps
       shell: bash
       continue-on-error: true
       run: |-
@@ -22,7 +50,23 @@ runs:
         echo '-------------------------------------'
         ls $(tutor config printroot)/env/apps -lha
 
+    - name: persist tutor config apps folder list
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: config-apps-persist
+      shell: bash
+      continue-on-error: true
+      run: |-
+        ls $(tutor config printroot)/env/apps | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/apps.json
+
+        kubectl create secret generic 'cookiecutter-ci-deploy-apps'  \
+        --save-config \
+        --dry-run=client \
+        --from-file=$(tutor config printroot)/apps.json \
+        -o yaml | kubectl apply -f -
+
+
     - name: Dump tutor config plugins folder
+      id: config-plugins
       shell: bash
       continue-on-error: true
       run: |-
@@ -34,7 +78,26 @@ runs:
         echo '-------------------------------------'
         ls $(tutor config printroot)/env/plugins -lha
 
+    - name: persist tutor config plugins list
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: config-plugins-persist
+      shell: bash
+      continue-on-error: true
+      run: |-
+        if [ -d "$(tutor config printroot)/env/plugins" ]; then
+          ls $(tutor config printroot)/env/plugins | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/plugins.json
+
+          kubectl create secret generic 'cookiecutter-ci-deploy-plugins'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/plugins.json \
+          -o yaml | kubectl apply -f -
+        else
+          echo "[]" > $(tutor config printroot)/plugins.json
+        fi
+
     - name: Dump tutor config.yml
+      id: config-tutor
       shell: bash
       continue-on-error: true
       run: |-
@@ -42,13 +105,35 @@ runs:
         echo '-------------------------------------'
         cat -n $(tutor config printroot)/config.yml
 
+    - name: persist tutor config.yml
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: config-tutor-persist
+      shell: bash
+      continue-on-error: true
+      run: |-
+        yq -j -o=json $(tutor config printroot)/config.yml > $(tutor config printroot)/config.json
+        kubectl create secret generic 'cookiecutter-ci-deploy-tutor' --from-file=$(tutor config printroot)/config.yml
+
     - name: Dump tutor env/apps/openedx/config/lms.env.yml
+      id: config-lms
       shell: bash
       continue-on-error: true
       run: |-
         echo 'lms.env.yml:'
         echo '-------------------------------------'
         cat -n $(tutor config printroot)/env/apps/openedx/config/lms.env.yml
+
+    - name: persist tutor env/apps/openedx/config/lms.env.json
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: config-lms-persist
+      shell: bash
+      continue-on-error: true
+      run: |-
+        kubectl create secret generic 'cookiecutter-ci-deploy-lms'  \
+        --save-config \
+        --dry-run=client \
+        --from-file=$(tutor config printroot)/env/apps/openedx/config/lms.env.json \
+        -o yaml | kubectl apply -f -
 
     - name: Dump tutor env/apps/openedx/config/cms.env.yml
       shell: bash
@@ -57,3 +142,15 @@ runs:
         echo 'cms.env.yml:'
         echo '-------------------------------------'
         cat -n $(tutor config printroot)/env/apps/openedx/config/cms.env.yml
+
+    - name: persist tutor env/apps/openedx/config/cms.env.json
+      if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+      id: config-cms-persist
+      shell: bash
+      continue-on-error: true
+      run: |-
+        kubectl create secret generic 'cookiecutter-ci-deploy-cms'  \
+        --save-config \
+        --dry-run=client \
+        --from-file=$(tutor config printroot)/env/apps/openedx/config/cms.env.json \
+        -o yaml | kubectl apply -f -

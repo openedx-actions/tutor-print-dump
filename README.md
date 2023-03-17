@@ -51,6 +51,9 @@ jobs:
       # 
 
       # This action.
+      # - eks-namespace: optional. if set, persists configuration data to Kubernetes secrets
       - name: Print tutor dump report
-        uses: openedx-actions/tutor-print-dump@v1.0.0 
+        uses: openedx-actions/tutor-print-dump@v1.0.1
+        with:
+          eks-namespace: my-prod-namespace
 ```
