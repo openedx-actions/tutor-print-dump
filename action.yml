@@ -1,5 +1,5 @@
 name: Open edX Tutor k8s print dump
-description: Github Action to print a summary report (a "dump") of the tutor configuration contents to the console
+description: Github Action to print a summary report (a "dump") of the tutor configuration contents to the console. Optionally persists the output to Kubernetes Secrets.
 branding:
   icon: 'cloud'
   color: 'orange'
@@ -9,16 +9,38 @@ inputs:
     required: false
     default: UNASSIGNED
     type: string
+  action:
+    description: 'The Cookiecutter Github Action workflow that called this action.'
+    required: false
+    default: UNASSIGNED
+    type: choice
+    options:
+    - UNASSIGNED
+    - build
+    - deploy
 runs:
   using: "composite"
   steps:
-    - name: set k8s context and namespace
+    # 1. ensure that we save secrets into the correct Kubernetes namespace
+    - name: set k8s context and namespace and initialize working directory
       if: ${{ inputs.namespace != 'UNASSIGNED' }}
       id: set-context
       shell: bash
       run: |-
         kubectl config set-context --current --namespace=${{ inputs.namespace }}
 
+    - name: initialize working directory
+      if: ${{ inputs.namespace != 'UNASSIGNED' }} && ${{ inputs.action != 'UNASSIGNED' }}
+      id: create-working-directory
+      shell: bash
+      run: |-
+        mkdir $(tutor config printroot)/cookiecutter
+
+    # 2. pip list
+    #    note that this is the pip list from the virtual environment created
+    #    inside the Github Actions runner for processing the parent workflow
+    #    of this action.
+    # -------------------------------------------------------------------------
     - name: pip list
       id: pip-list
       shell: bash
@@ -33,14 +55,27 @@ runs:
       id: pip-list-persist
       shell: bash
       run: |-
-        pip list --format=json > $(tutor config printroot)/pip.json
+        pip list --format=json > $(tutor config printroot)/cookiecutter/pip.json
 
-        kubectl create secret generic 'cookiecutter-ci-deploy-pip'  \
-        --save-config \
-        --dry-run=client \
-        --from-file=$(tutor config printroot)/pip.json \
-        -o yaml | kubectl apply -f -
+        if [ ${{ inputs.action }} = "build" ]; then
+          kubectl create secret generic 'cookiecutter-ci-build-pip'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/pip.json \
+          -o yaml | kubectl apply -f -
+        fi
+        if [ ${{ inputs.action }} = "deploy" ]; then
+          kubectl create secret generic 'cookiecutter-ci-deploy-pip'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/pip.json \
+          -o yaml | kubectl apply -f -
+        fi
 
+    # 3. apps list: stuff like openedx, caddy, redis, mongodb, mysql
+    #    helps to explain whether the intention was to run services remotely
+    #    or from inside the cluster
+    # -------------------------------------------------------------------------
     - name: Dump tutor config apps folder
       id: config-apps
       shell: bash
@@ -56,15 +91,26 @@ runs:
       shell: bash
       continue-on-error: true
       run: |-
-        ls $(tutor config printroot)/env/apps | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/apps.json
+        ls $(tutor config printroot)/env/apps | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/cookiecutter/apps.json
 
-        kubectl create secret generic 'cookiecutter-ci-deploy-apps'  \
-        --save-config \
-        --dry-run=client \
-        --from-file=$(tutor config printroot)/apps.json \
-        -o yaml | kubectl apply -f -
+        if [ ${{ inputs.action }} = "build" ]; then
+          kubectl create secret generic 'cookiecutter-ci-build-apps'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/apps.json \
+          -o yaml | kubectl apply -f -
+        fi
+        if [ ${{ inputs.action }} = "deploy" ]; then
+          kubectl create secret generic 'cookiecutter-ci-deploy-apps'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/apps.json \
+          -o yaml | kubectl apply -f -
+        fi
 
-
+    # 4. tutor plugins list. stuff like mfe, smtp, tutor-contrib-k8s-deploy-tasks,
+    #    tutor-contrib-s3, etcetera
+    # -------------------------------------------------------------------------
     - name: Dump tutor config plugins folder
       id: config-plugins
       shell: bash
@@ -85,17 +131,30 @@ runs:
       continue-on-error: true
       run: |-
         if [ -d "$(tutor config printroot)/env/plugins" ]; then
-          ls $(tutor config printroot)/env/plugins | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/plugins.json
+          ls $(tutor config printroot)/env/plugins | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/cookiecutter/plugins.json
         else
-          echo "[]" > $(tutor config printroot)/plugins.json
+          echo "[]" > $(tutor config printroot)/cookiecutter/plugins.json
         fi
 
-        kubectl create secret generic 'cookiecutter-ci-deploy-plugins'  \
-        --save-config \
-        --dry-run=client \
-        --from-file=$(tutor config printroot)/plugins.json \
-        -o yaml | kubectl apply -f -
+        if [ ${{ inputs.action }} = "build" ]; then
+          kubectl create secret generic 'cookiecutter-ci-build-plugins'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/plugins.json \
+          -o yaml | kubectl apply -f -
+        fi
+        if [ ${{ inputs.action }} = "deploy" ]; then
+          kubectl create secret generic 'cookiecutter-ci-deploy-plugins'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/plugins.json \
+          -o yaml | kubectl apply -f -
+        fi
 
+    # 5. tutor config.yml
+    #    contains the final collection of stuff that was saved using
+    #    'tutor config save'
+    # -------------------------------------------------------------------------
     - name: Dump tutor config.yml
       id: config-tutor
       shell: bash
@@ -111,9 +170,27 @@ runs:
       shell: bash
       continue-on-error: true
       run: |-
-        yq -j -o=json $(tutor config printroot)/config.yml > $(tutor config printroot)/config.json
-        kubectl create secret generic 'cookiecutter-ci-deploy-tutor' --from-file=$(tutor config printroot)/config.yml
+        yq -j -o=json $(tutor config printroot)/config.yml > $(tutor config printroot)/cookiecutter/config.json
 
+        if [ ${{ inputs.action }} = "build" ]; then
+          kubectl create secret generic 'cookiecutter-ci-build-tutor' \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/config.json \
+          -o yaml | kubectl apply -f -
+        fi
+        if [ ${{ inputs.action }} = "deploy" ]; then
+          kubectl create secret generic 'cookiecutter-ci-deploy-tutor' \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/cookiecutter/config.json \
+          -o yaml | kubectl apply -f -
+        fi
+
+    # 6. tutor lms.env.yml and cms.env.yml
+    #    contain the final interim values that tutor uses for rendering
+    #    envs/common.py and envs/tutor/production.py files
+    # -------------------------------------------------------------------------
     - name: Dump tutor env/apps/openedx/config/lms.env.yml
       id: config-lms
       shell: bash
@@ -129,11 +206,21 @@ runs:
       shell: bash
       continue-on-error: true
       run: |-
-        kubectl create secret generic 'cookiecutter-ci-deploy-lms'  \
-        --save-config \
-        --dry-run=client \
-        --from-file=$(tutor config printroot)/env/apps/openedx/config/lms.env.json \
-        -o yaml | kubectl apply -f -
+
+        if [ ${{ inputs.action }} = "build" ]; then
+          kubectl create secret generic 'cookiecutter-ci-build-lms'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/env/apps/openedx/config/lms.env.yml \
+          -o yaml | kubectl apply -f -
+        fi
+        if [ ${{ inputs.action }} = "deploy" ]; then
+          kubectl create secret generic 'cookiecutter-ci-deploy-lms'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/env/apps/openedx/config/lms.env.yml \
+          -o yaml | kubectl apply -f -
+        fi
 
     - name: Dump tutor env/apps/openedx/config/cms.env.yml
       shell: bash
@@ -143,14 +230,78 @@ runs:
         echo '-------------------------------------'
         cat -n $(tutor config printroot)/env/apps/openedx/config/cms.env.yml
 
-    - name: persist tutor env/apps/openedx/config/cms.env.json
+    - name: persist tutor env/apps/openedx/config/cms.env.yml
       if: ${{ inputs.namespace != 'UNASSIGNED' }}
       id: config-cms-persist
       shell: bash
       continue-on-error: true
       run: |-
-        kubectl create secret generic 'cookiecutter-ci-deploy-cms'  \
+
+        if [ ${{ inputs.action }} = "build" ]; then
+          kubectl create secret generic 'cookiecutter-ci-build-cms'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/env/apps/openedx/config/cms.env.yml \
+          -o yaml | kubectl apply -f -
+        fi
+        if [ ${{ inputs.action }} = "deploy" ]; then
+          kubectl create secret generic 'cookiecutter-ci-deploy-cms'  \
+          --save-config \
+          --dry-run=client \
+          --from-file=$(tutor config printroot)/env/apps/openedx/config/cms.env.yml \
+          -o yaml | kubectl apply -f -
+        fi
+
+    # 7. tutor Docker container build configuration.
+    #
+    #    Contains the final sets of resources that tutor will include in its
+    #    Docker container build of openedx.
+    #
+    #    extract meta data about each category of resource and stash each
+    #    section as a json file in a directory named ./cookiecutter/
+    #    Create a single Kubernetes secret containing the entire collection
+    #    of meta data
+    # -------------------------------------------------------------------------
+    - name: persist tutor private.txt requirements file
+      if: ${{ inputs.namespace != 'UNASSIGNED' }} && ${{ inputs.action == 'build' }}
+      id: config-requirements
+      shell: bash
+      continue-on-error: true
+      run: |-
+        mkdir $(tutor config printroot)/env/build/openedx/cookiecutter
+
+        if [ -d "$(tutor config printroot)/env/build/openedx/requirements/" ]; then
+          ls $(tutor config printroot)/env/build/openedx/requirements/ | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/env/build/openedx/cookiecutter/requirements.json
+        else
+          touch $(tutor config printroot)/env/build/openedx/cookiecutter/requirements.json
+        fi
+
+        touch $(tutor config printroot)/env/build/openedx/cookiecutter/revisions.yml
+        cat "$(tutor config printroot)/env/build/openedx/revisions.yml" > $(tutor config printroot)/env/build/openedx/cookiecutter/revisions.yml
+
+        if [ -d "$(tutor config printroot)/env/build/openedx/themes/" ]; then
+          ls $(tutor config printroot)/env/build/openedx/themes/ | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/env/build/openedx/cookiecutter/themes.json
+        else
+          touch $(tutor config printroot)/env/build/openedx/cookiecutter/requirements.json
+        fi
+
+        kubectl create secret generic 'cookiecutter-ci-build-docker'  \
         --save-config \
         --dry-run=client \
-        --from-file=$(tutor config printroot)/env/apps/openedx/config/cms.env.json \
+        --from-file=$(tutor config printroot)/env/build/openedx/cookiecutter/requirements.json \
+        --from-file=$(tutor config printroot)/env/build/openedx/cookiecutter/revisions.yml \
+        --from-file=$(tutor config printroot)/env/build/openedx/cookiecutter/themes.json \
+        --from-file=$(tutor config printroot)/env/build/openedx/Dockerfile \
         -o yaml | kubectl apply -f -
+
+    - name: cleanup dump environment
+      id: cleanup-environment
+      shell: bash
+      run: |-
+        if [ -d "$(tutor config printroot)/cookiecutter" ]; then
+          sudo rm -r $(tutor config printroot)/cookiecutter
+        fi
+
+        if [ -d "$(tutor config printroot)/env/build/openedx/cookiecutter" ]; then
+          sudo rm -r $(tutor config printroot)/env/build/openedx/cookiecutter
+        fi
