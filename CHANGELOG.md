@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Version 1.0.3 (2023-03-16)
+
+- Fixes poorly named input variable
+- Fixes logic flaw with configurations that do not include plugins
+
 ## Version 1.0.1 (2023-03-16)
 
 - add eks-namespace as an optional parameter. If provided, persists configuration data into Kubernetes Secrets
