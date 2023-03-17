@@ -1,5 +1,5 @@
 name: Open edX Tutor k8s print dump
-description: Github Action to print a summary report (a "dump") of the tutor configuration contents to the console. Optionally persists the output to Kubernetes Secrets.
+description: Github Action to print a summary report (a "dump") of the tutor configuration contents to the console.
 branding:
   icon: 'cloud'
   color: 'orange'

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Version 1.0.4 (2023-03-17)
 
 - add 'action' choice input to tailor dumps for 'build' versus 'deploy'
+- stash all interim results in a working directory
+- remove the working directory when we're finished
+- add 'build' secrets for storing meta data about themes, requirements, plugins and Dockerfile
 
 ## Version 1.0.3 (2023-03-16)
 
