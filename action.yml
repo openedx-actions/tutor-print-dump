@@ -86,15 +86,15 @@ runs:
       run: |-
         if [ -d "$(tutor config printroot)/env/plugins" ]; then
           ls $(tutor config printroot)/env/plugins | jq -R -s -c 'split("\n")[:-1]' > $(tutor config printroot)/plugins.json
-
-          kubectl create secret generic 'cookiecutter-ci-deploy-plugins'  \
-          --save-config \
-          --dry-run=client \
-          --from-file=$(tutor config printroot)/plugins.json \
-          -o yaml | kubectl apply -f -
         else
           echo "[]" > $(tutor config printroot)/plugins.json
         fi
+
+        kubectl create secret generic 'cookiecutter-ci-deploy-plugins'  \
+        --save-config \
+        --dry-run=client \
+        --from-file=$(tutor config printroot)/plugins.json \
+        -o yaml | kubectl apply -f -
 
     - name: Dump tutor config.yml
       id: config-tutor
