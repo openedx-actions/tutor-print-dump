@@ -63,9 +63,10 @@ jobs:
 
 ## Contributing
 
-Pull requests are welcome! Please note that this repository uses automated processessing of commits, pull requests, and semantic releases. Please note the following about your commit message:
+Pull requests are welcome! Please note that this repository uses [semantic release](https://github.com/semantic-release/semantic-release) for automated processessing of commits and pull requests, and package publication for new releases. Please note the following about your commit message:
 
-- your Pull Request should be created from the 'next' branch
+- pull requests can be approved and merged by any **two** authorized core committers
+- only the 'next' branch can be merged to main. Thus, your Pull Request should be created from the 'next' branch
 - we use [Angular commit message format](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#-commit-message-format). See below
 - use the imperative, present tense: "change" not "changed" nor "changes"
 - don't capitalize the first letter
