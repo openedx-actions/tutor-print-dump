@@ -63,13 +63,23 @@ jobs:
 
 ## Contributing
 
-This repository uses automated processessing of commits, pull requests, and semantic releases. Please note the following about your commit message:
+Pull requests are welcome! Please note that this repository uses automated processessing of commits, pull requests, and semantic releases. Please note the following about your commit message:
 
 - your Pull Request should be created from the 'next' branch
 - we use [Angular commit message format](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#-commit-message-format). See below
 - use the imperative, present tense: "change" not "changed" nor "changes"
 - don't capitalize the first letter
 - no dot (.) at the end
+
+### Branches associated with CI automation
+
+| Branch     | Description                                                                                           |
+|:-----------|:------------------------------------------------------------------------------------------------------|
+| main       | commits are prohibited. Only accepts automated merges via Github Actions                              |
+| next       | this is the branch that I (Lawrence) primarly use for normal code maintenance                         |
+| next-major | special use, in the unlikely event that we ever bump beyond version 1.x.x                             |
+| beta       | if you're working on something large then merge here before doing anything in 'next'                  |
+| alph       | if you're doing some really big then start here                                                       |
 
 ### About the Angular commit message format
 
@@ -82,7 +92,7 @@ An example:
 Your commit message should be prefixed with one of the following:
 
 | Prefix   | Description                                                                                           |
-|:--------:|:------------------------------------------------------------------------------------------------------|
+|:---------|:------------------------------------------------------------------------------------------------------|
 | build    | changes that affect the build system or external dependencies (example - scopes: gulp, broccoli, npm) |
 | ci       | changes to our CI configuration files and scripts (examples: Github Actions, CircleCi, SauceLabs)     |
 | docs     | documentation only changes                                                                            |
