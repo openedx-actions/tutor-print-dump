@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Version 1.0.5 (2023-04-28)
+
+- version bumps
+- add test status
+- add sponsorship solicitation
+
 ## Version 1.0.4 (2023-03-17)
 
 - add 'action' choice input to tailor dumps for 'build' versus 'deploy'
