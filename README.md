@@ -60,3 +60,26 @@ jobs:
           namespace: openedx-prod
           action: deploy
 ```
+
+## Contributing
+
+This repository uses automated processessing of commits, pull requests, and semantic releases. Please note the following:
+
+- your Pull Request should be created from the 'next' branch
+
+We use [Angular commit message format](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#-commit-message-format). An example:
+
+```bash
+  git commit -m "fix: fix bug in the yadda yadda step"
+```
+
+Importantly, your commit message should be prefixed with one of the following:
+
+- build: changes that affect the build system or external dependencies (example - scopes: gulp, broccoli, npm)
+- ci: changes to our CI configuration files and scripts (examples: Github Actions, CircleCi, SauceLabs)
+- docs: documentation only changes
+- feat: a new feature
+- fix: a bug fix
+- perf: a code change that improves performance
+- refactor: a code change that neither fixes a bug nor adds a feature
+- test: adding missing tests or correcting existing tests
