@@ -81,11 +81,15 @@ An example:
 
 Your commit message should be prefixed with one of the following:
 
-- **build**: changes that affect the build system or external dependencies (example - scopes: gulp, broccoli, npm)
-- **ci**: changes to our CI configuration files and scripts (examples: Github Actions, CircleCi, SauceLabs)
-- **docs**: documentation only changes
-- **feat**: a new feature
-- **fix**: a bug fix
-- **perf**: a code change that improves performance
-- **refactor**: a code change that neither fixes a bug nor adds a feature
-- **test**: adding missing tests or correcting existing tests
+| Prefix   | Description                                                                                           |
+|:--------:|:------------------------------------------------------------------------------------------------------|
+| build    | changes that affect the build system or external dependencies (example - scopes: gulp, broccoli, npm) |
+| ci       | changes to our CI configuration files and scripts (examples: Github Actions, CircleCi, SauceLabs)     |
+| docs     | documentation only changes                                                                            |
+| feat     | a new feature                                                                                         |
+| fix      | a bug fix                                                                                             |
+| perf     | a code change that improves performance                                                               |
+| refactor | a code change that neither fixes a bug nor adds a feature                                             |
+| test     | adding missing tests or correcting existing tests                                                     |
+
+More generally, less is more: don't use two words where one will suffice. Simple words are better than fancy words.
