@@ -42,7 +42,7 @@ jobs:
 
       # install and configure tutor and kubectl
       - name: Initialize environment
-        uses: openedx-actions/tutor-k8s-init
+        uses: openedx-actions/tutor-k8s-init@v1
         with:
           namespace: openedx-prod
 
@@ -55,7 +55,7 @@ jobs:
       # - action: optional. if set, persists meta data of stated action type to Kubernetes secrets
       #           valid choices: build, deploy
       - name: Print tutor dump report
-        uses: openedx-actions/tutor-print-dump
+        uses: openedx-actions/tutor-print-dump@v1
         with:
           namespace: openedx-prod
           action: deploy
